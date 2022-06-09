@@ -11,11 +11,6 @@ param adminUsername string
 ])
 param authenticationType string = 'password'
 
-// This is the SSH public key that you provide, so Azure
-// can store the public key on the VM, which is used
-// when you (the client) provide the private key to
-// connect via SSH
-// Currently, this file is set to use a password instead
 @description('SSH Key or password for the Virtual Machine. SSH key is recommended.')
 @secure()
 param adminPasswordOrKey string
@@ -29,22 +24,9 @@ param location string = resourceGroup().location
 @description('The size of the VM')
 param vmSize string = 'Standard_B1s'
 
-@description('Name of the VNET')
-param virtualNetworkName string = 'vnet-lamp'
-
-@description('Name of the subnet in the virtual network')
-param subnetName string = 'subnet-lamp'
-
-@description('Name of the Network Security Group')
-param networkSecurityGroupName string = 'nsg-lamp'
-
 var publicIPAddressName = 'pip-${vmName}'
 var networkInterfaceName = 'nic-${vmName}'
 var osDiskType = 'Standard_LRS'
-// this set up wont have too many components now or in the future, 
-// so this address space and subnet is fine
-var subnetAddressPrefix = '10.0.1.0/24'
-var addressPrefix = '10.0.1.0/24'
 var linuxConfiguration = {
   disablePasswordAuthentication: true
   ssh: {
@@ -81,61 +63,17 @@ resource nic 'Microsoft.Network/networkInterfaces@2021-05-01' = {
   }
 }
 
-resource nsg 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
-  name: networkSecurityGroupName
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'SSH'
-        properties: {
-          priority: 1000
-          protocol: 'Tcp'
-          access: 'Allow'
-          direction: 'Inbound'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '22'
-        }
-      }
-      {
-        name: 'HTTP'
-        properties: {
-          priority: 1010
-          protocol: 'Tcp'
-          access: 'Allow'
-          direction: 'Inbound'
-          sourceAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationAddressPrefix: '*'
-          destinationPortRange: '80'
-        }
-      }
-    ]
-  }
+resource nsg 'Microsoft.Network/networkSecurityGroups@2021-05-01' existing = {
+  name: 'nsg-dev-lamp'
 }
 
-resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01' = {
-  name: virtualNetworkName
-  location: location
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        addressPrefix
-      ]
-    }
-  }
+resource vnet 'Microsoft.Network/virtualNetworks@2021-05-01'  existing = {
+  name: 'vnet-dev-lamp'
 }
 
-resource subnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
+resource subnet 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' existing = {
   parent: vnet
-  name: subnetName
-  properties: {
-    addressPrefix: subnetAddressPrefix
-    privateEndpointNetworkPolicies: 'Enabled'
-    privateLinkServiceNetworkPolicies: 'Enabled'
-  }
+  name: 'subnet-dev-lamp'
 }
 
 resource publicIP 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
