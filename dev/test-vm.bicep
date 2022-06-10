@@ -1,5 +1,8 @@
+// resources instances should increment...
+// i.e. apache01, apache02, apache03, etc.
+
 @description('The name of your Virtual Machine.')
-param vmName string
+param vmName string = 'vm-dev-apache01'
 
 @description('Username for the Virtual Machine.')
 param adminUsername string
@@ -101,6 +104,7 @@ resource apacheServer 'Microsoft.Compute/virtualMachines@2021-11-01' = {
     }
     storageProfile: {
       osDisk: {
+        name: 'disk-dev-apache01'
         createOption: 'FromImage'
         managedDisk: {
           storageAccountType: osDiskType
